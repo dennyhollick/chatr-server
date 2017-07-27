@@ -2,6 +2,7 @@
 
 const express = require('express');
 const WebSocket = require('ws');
+
 const SocketServer = WebSocket.Server;
 const uuid = require('node-uuid');
 
@@ -10,19 +11,18 @@ const PORT = 3001;
 
 // Create a new express server
 const server = express()
-   // Make the express server serve static assets (html, javascript, css) from the /public folder
+  // Make the express server serve static assets (html, javascript, css) from the /public folder
   .use(express.static('public'))
-  .listen(PORT, '0.0.0.0', 'localhost', () => console.log(`Listening on ${ PORT }`));
+  .listen(PORT, '0.0.0.0', 'localhost', () => console.log(`Listening on ${PORT}`));
 
 // Create the WebSockets server
 const wss = new SocketServer({ server });
 
 
-
 // Broadcast function with stringify
 wss.broadcast = function broadcast(data) {
-  console.log('broadcasting')
-  wss.clients.forEach(function each(client) {
+  console.log(data);
+  wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(JSON.stringify(data));
     }
@@ -35,9 +35,36 @@ wss.on('connection', (ws) => {
   console.log('Client connected');
 
   ws.onmessage = function (event) {
-  let incomingMessage = JSON.parse(event.data)
-  incomingMessage.uuid = uuid();
-  wss.broadcast(incomingMessage);
+    const incomingMessage = JSON.parse(event.data);
+    incomingMessage.uuid = uuid();
+    switch (incomingMessage.type) {
+      case 'newMessage':
+        wss.broadcast(incomingMessage);
+        break;
+      case 'nameChange': {
+        const nameChangeBroadcast = {
+          uuid: incomingMessage.uuid,
+          content: `${incomingMessage.oldUsername} has changed their name to ${incomingMessage.newUserName}`,
+        };
+        wss.broadcast(nameChangeBroadcast);
+        break;
+      }
+      default: {
+        const defaultErrorCheck = {
+          uuid: incomingMessage.uuid,
+          content: `Server error: Unknown case type. Admin: See server logs console. ${incomingMessage.uuid}`,
+        };
+        wss.broadcast(defaultErrorCheck);
+        console.log(
+          `
+          *************** \n
+          ERROR UID: ${incomingMessage.uuid} \n 
+          Unknown case type for incoming msg. \n
+          Incoming message: ${event.data} \n
+          ***************** \n`);
+        break;
+      }
+    }
   };
 
   // Set up a callback for when a client closes the socket. This usually means they closed their browser.
