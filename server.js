@@ -31,10 +31,11 @@ wss.broadcast = function broadcast(data) {
 
 // Connect and run
 
-let connectedUsers = 0;
+
 
 wss.on('connection', (ws) => {
-  connectedUsers += 1;
+
+let connectedUsers = wss.clients.size;
 
   // Update total users across all clients upon connect
   wss.broadcast({
@@ -64,6 +65,7 @@ wss.on('connection', (ws) => {
       default: {
         const defaultErrorCheck = {
           uuid: incomingMessage.uuid,
+          type: 'err',
           content: `Server error: Unknown case type. Admin: See server logs console. ${incomingMessage.uuid}`,
         };
         wss.broadcast(defaultErrorCheck);
@@ -81,7 +83,11 @@ wss.on('connection', (ws) => {
 
   // Set up a callback for when a client closes the socket. This usually means they closed their browser.
   ws.on('close', () => {
-    connectedUsers -= 1;
+    connectedUsers = wss.clients.size;
     console.log(`Client disconnected, Total Users = ${connectedUsers}`);
+    wss.broadcast({
+      type: 'systemStatus',
+      totalUsers: connectedUsers,
+    });
   });
 });
