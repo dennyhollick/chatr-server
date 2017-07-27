@@ -5,6 +5,7 @@ const WebSocket = require('ws');
 
 const SocketServer = WebSocket.Server;
 const uuid = require('node-uuid');
+const randomColour = require('randomcolor');
 
 // Set the port to 3001
 const PORT = 3001;
@@ -32,14 +33,22 @@ wss.broadcast = function broadcast(data) {
 // Connect and run
 
 
-
 wss.on('connection', (ws) => {
+  const clientColour = randomColour();
+  const setColour = {
+    type: 'systemStatus',
+    subType: 'userColour',
+    userColour: clientColour,
+  };
 
-let connectedUsers = wss.clients.size;
+  ws.send(JSON.stringify(setColour));
+
+  let connectedUsers = wss.clients.size;
 
   // Update total users across all clients upon connect
   wss.broadcast({
     type: 'systemStatus',
+    subType: 'totalUsers',
     totalUsers: connectedUsers,
   });
   console.log(`Client connected, Total Users = ${connectedUsers}`);
@@ -87,6 +96,7 @@ let connectedUsers = wss.clients.size;
     console.log(`Client disconnected, Total Users = ${connectedUsers}`);
     wss.broadcast({
       type: 'systemStatus',
+      subType: 'totalUsers',
       totalUsers: connectedUsers,
     });
   });
