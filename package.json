@@ -12,8 +12,9 @@
   "dependencies": {
     "express": "4.15.3",
     "node-uuid": "1.4.8",
-    "ws": "3.0.0",
-    "randomcolor": "^0.5.3"
+    "randomcolor": "^0.5.3",
+    "request": "^2.81.0",
+    "ws": "3.0.0"
   },
   "devDependencies": {
     "eslint": "^4.3.0",
